@@ -1,155 +1,97 @@
-# Dual-Memory Optimizer
+# ⚡ Dual-Memory Optimizer (v2.0)
 
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Dependencies: Zero](https://img.shields.io/badge/dependencies-none-brightgreen.svg)]()
+[![Manifest: V3](https://img.shields.io/badge/Chrome_Extension-Manifest_V3-success.svg?style=for-the-badge)](extension/manifest.json)
+[![Download Latest ZIP](https://img.shields.io/badge/⬇️_Download_Chrome_ZIP-v2.0.0-6366f1?style=for-the-badge)](https://github.com/jesusdelira7-956/dual-memory-optimizer/releases/latest/download/Dual-Memory-Optimizer-v2.0.0.zip)
+[![Python 3.8+](https://img.shields.io/badge/Python-3.8+-blue.svg?style=for-the-badge)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
-> **Slash LLM context consumption by 70–85%** with deterministic AST code graphs and semantic directives. Stop letting AI agents waste entire context windows on blind `ls`, `tree`, and redundant file reads.
+> **Slash AI prompt context & token consumption by 70–85%** with 1-click AST code tree-shaking and persistent directives. Built for developers using **ChatGPT, Claude, Gemini, DeepSeek, and local coding agents**.
 
 ---
 
-## ⚡ What is the Dual-Memory Architecture?
+## 🌐 The Manifest V3 Chrome Extension
 
-When LLMs interact with codebases, they typically wander: executing directory listings, grep loops, and dumping 1,000-line files into prompt context just to inspect a 4-line function.
+Stop burning 10,000 tokens every time you paste code into ChatGPT or Claude. **Dual-Memory Optimizer** brings deterministic context compression directly into your web browser.
 
-**Dual-Memory Optimizer** solves this mismatch by separating agent navigation into two synchronized layers:
-
-1. **Deterministic Structural Memory (Layer 3 Execution)**
-   - Fast, zero-dependency Python AST parser (`ast` standard library + TypeScript regex scanner).
-   - Generates `.tmp/code_graph.json` mapping all classes, functions, async methods, and line boundaries.
-   - Enables instantaneous symbol querying (`execution/code_graph_query.py --symbol <name>`) in sub-milliseconds without LLM calls.
-2. **Semantic Operational Directives (Layer 1 Directive & Agent Skills)**
-   - Standardized SOPs (`directives/token_optimizer.md`) and agent skills (`skills/token-optimizer/SKILL.md`).
-   - Guides the LLM to read `.tmp/codebase_map.txt` first and target precise line ranges instead of dumping raw source files.
-
-```
-       ┌──────────────────────────────────────────────┐
-       │             AI Coding Agent / IDE            │
-       └──────────────────────┬───────────────────────┘
-                              │
-              ┌───────────────┴───────────────┐
-              ▼                               ▼
-   [Layer 1: Semantic SOP]        [Layer 3: AST Engine]
-   directives/token_optimizer.md   execution/token_optimizer.py
-              │                               │
-              ▼                               ▼
-   Agent Navigation Protocol       .tmp/code_graph.json
-   - Consult map before listing    - Symbol index (Classes, Funcs)
-   - Read exact line spans         - Line numbers & signatures
-              │                               │
-              └───────────────┬───────────────┘
-                              ▼
-           Targeted Code Editing with Zero Waste
+```text
+       [ 500-Line Codebase / Stack Trace ]
+                       │
+                       ▼
+    ╔════════════════════════════════════════╗
+    ║      DUAL-MEMORY OPTIMIZER (MV3)       ║
+    ║  • 1-Click "Condense Code" (-75%)      ║
+    ║  • In-Browser AST Signature Extractor  ║
+    ║  • Working Memory Prompt Studio HUD    ║
+    ║  • Persistent Project Directives       ║
+    ║  • In-Page GitHub Codebase Mapper      ║
+    ╚════════════════════════════════════════╝
+                       │
+                       ▼
+       [ 80-Line Typed Interface Signatures ]
+            (70–85% Context Headroom Saved)
 ```
 
----
-
-## 🚀 Key Features
-
-- 🪶 **Zero External Dependencies:** Built entirely on Python's built-in `ast`, `re`, `os`, `json`, and `pathlib`. No heavy npm packages, no compilation, no pip installs required.
-- 🌐 **Polyglot Parsing:** Native Python AST parsing alongside robust TypeScript, TSX, JavaScript, and JSX symbol extractors.
-- 🌳 **Visual & Machine Maps:**
-  - `.tmp/codebase_map.txt` — Compact visual directory tree curated specifically for LLM context reading.
-  - `.tmp/codebase_index.json` — Flat manifest of workspace files for fast validation.
-  - `.tmp/code_graph.json` — Exhaustive symbol dictionary with line boundaries.
-- 🔍 **Instant CLI Symbol Querying:** Locate definitions in under 5ms:
-  ```bash
-  python3 execution/code_graph_query.py --symbol calculate_metrics
-  ```
-- 🛡️ **Intelligent Filtering:** Automatically ignores `.git`, `node_modules`, `venv`, binary files, build artifacts, and heavy dataset directories.
+### ⚡ Chrome Extension Features:
+1. **Floating In-Page Assistant:** Automatically detects code pasted into **ChatGPT, Claude, Gemini, and Copilot**. Shows a 1-click `⚡ Condense Code (-75%)` button that replaces verbose implementations with compact typed interfaces in-place.
+2. **Dual-Memory Side Panel HUD:**
+   - **Working Memory (Prompt Studio):** Real-time BPE token counter and cost calculator. Test and tree-shake code snippets before submitting.
+   - **Persistent Memory (Project Directives):** Store system instructions, architectural constraints, and formatting rules locally on your device in `chrome.storage.local`. Inject them into any prompt with 1 click.
+3. **In-Browser GitHub Mapper:** When viewing any GitHub repository, the side panel scans the DOM to produce an AI-ready structured codebase map without cloning.
+4. **100% Client-Side & Sovereign:** Zero telemetry, zero external APIs, zero server dependency.
 
 ---
 
-## 📦 Installation
+## 🚀 5-Second Automated Chrome Install
 
-Clone or download this repository into your workspace, or run the installer:
+### Linux & macOS (1-Line Terminal Command)
+```bash
+curl -fsSL https://raw.githubusercontent.com/jesusdelira7-956/dual-memory-optimizer/main/install-extension.sh | bash
+```
 
+### Windows (PowerShell)
+```powershell
+irm https://raw.githubusercontent.com/jesusdelira7-956/dual-memory-optimizer/main/install-extension.ps1 | iex
+```
+
+*Or manually:*
+1. Download [`Dual-Memory-Optimizer-v2.0.0.zip`](https://github.com/jesusdelira7-956/dual-memory-optimizer/releases/latest/download/Dual-Memory-Optimizer-v2.0.0.zip).
+2. Open `chrome://extensions/` and toggle **Developer mode** (top-right).
+3. **Drag and drop the ZIP file** directly onto the extensions page!
+
+---
+
+## 💻 Python CLI & Local Coding Agent Engine
+
+For local terminal agents (Claude Code, Aider, OpenCode, Antigravity), Dual-Memory Optimizer provides a zero-dependency AST engine:
+
+### ⚡ Architecture
+1. **Deterministic Structural Memory (Layer 3 Execution):**
+   - Built-in Python `ast` parser generates `.tmp/code_graph.json` and `.tmp/codebase_map.txt`.
+   - Sub-millisecond CLI queries for function and class definitions without LLM calls.
+2. **Semantic Operational Directives (Layer 1 Directive & Agent Skills):**
+   - Standardized SOPs (`directives/token_optimizer.md`) that guide AI agents to read the map first instead of running blind `ls` or dumping files.
+
+### Local CLI Installation
 ```bash
 git clone https://github.com/jesusdelira7-956/dual-memory-optimizer.git
 cd dual-memory-optimizer
 ./install.sh /path/to/your/project
 ```
 
-Or manually copy the files into your project:
-```
-your-project/
-├── directives/
-│   └── token_optimizer.md
-├── execution/
-│   ├── token_optimizer.py
-│   └── code_graph_query.py
-└── .agents/skills/token-optimizer/
-    └── SKILL.md
+### Instant Symbol Querying
+```bash
+python3 execution/code_graph_query.py --symbol calculate_metrics
 ```
 
 ---
 
-## 🛠️ Usage
+## 🛡️ Chrome Web Store Compliance & Privacy
 
-### 1. Build the Codebase Map & Symbol Graph
-Run the optimizer against your target codebase:
-```bash
-python3 execution/token_optimizer.py --target .
-```
-
-Output:
-```
-============================================================
-Token Optimizer: Codebase Map & AST Symbol Graph Generator
-============================================================
-Target Directory: .
-Ignored Dirs: .git, .venv, node_modules, build, dist, ...
-Ignored Extensions: .png, .jpg, .pyc, .so, .zip, ...
-
-[OK] Scanned 120 files across 14 directories.
-[OK] Codebase map generated: .tmp/codebase_map.txt (est. 480 tokens)
-[OK] File index generated: .tmp/codebase_index.json
-[OK] AST code graph generated: .tmp/code_graph.json (412 symbols indexed)
-============================================================
-```
-
-### 2. Query Symbols
-Find where any function or class is defined:
-```bash
-python3 execution/code_graph_query.py --symbol generate_graph
-```
-Output:
-```json
-[
-  {
-    "symbol": "generate_graph",
-    "type": "function",
-    "file": "execution/token_optimizer.py",
-    "line": 142,
-    "signature": "def generate_graph(target_path, output_dir)"
-  }
-]
-```
-
-### 3. Agent Instruction (System Prompt / SOP)
-Add the following instruction to your agent's system prompt or `AGENTS.md`:
-
-```markdown
-When entering this workspace, run:
-  python3 execution/token_optimizer.py --target .
-Read `.tmp/codebase_map.txt` before issuing navigation commands.
-For symbol lookups, use `python3 execution/code_graph_query.py --symbol <name>`
-rather than reading raw files.
-```
-
----
-
-## 📊 Benchmark Comparison
-
-| Metric | Without Optimizer (Traditional) | With Dual-Memory Optimizer | Improvement |
-| :--- | :---: | :---: | :---: |
-| **Initial Navigation Cost** | 8,000 – 15,000 tokens | 400 – 800 tokens | **~94% Reduction** |
-| **Symbol Discovery Time** | 3–5 roundtrips (`grep` + reads) | 1 roundtrip / sub-millisecond | **Instant** |
-| **External Dependencies** | `node`, `npm`, build tools | None (Pure Python 3.8+) | **Zero Setup** |
-| **Risk of Context Overflow** | High on large projects | Low / Controlled depth | **Stable** |
+- **Zero Remote Code:** Fully bundled local logic meeting Google Chrome Web Store Manifest V3 policies.
+- **Narrowly Scoped Permissions:** Scoped strictly to `chatgpt.com`, `claude.ai`, `gemini.google.com`, and `github.com`.
+- **Zero Data Collection:** Does not collect, track, transmit, or monetize any user data. See [PRIVACY.md](PRIVACY.md).
 
 ---
 
 ## 📄 License
-
-MIT License. Feel free to use, modify, and distribute across personal and enterprise projects.
+MIT © 2026 Dual-Memory Contributors

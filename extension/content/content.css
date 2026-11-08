@@ -1,0 +1,85 @@
+/**
+ * content.css
+ * ===========
+ * Styling for Dual-Memory Optimizer in-page floating pill and notification.
+ */
+
+#dual-memory-optimizer-pill {
+  position: absolute;
+  z-index: 999999;
+  display: none;
+  cursor: pointer;
+  background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%);
+  border: 1px solid #818cf8;
+  border-radius: 20px;
+  padding: 4px 12px;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  user-select: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+#dual-memory-optimizer-pill:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(99, 102, 241, 0.55);
+  border-color: #a5b4fc;
+}
+
+.dmo-pill-content {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dmo-icon {
+  font-size: 14px;
+}
+
+.dmo-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: #f8fafc;
+  letter-spacing: 0.2px;
+}
+
+.dmo-badge {
+  background: #4f46e5;
+  color: #a5f3fc;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+
+.dmo-toast-notification {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999999;
+  background: #0f172a;
+  color: #38bdf8;
+  border: 1px solid #0284c7;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+  animation: dmoSlideIn 0.25s ease-out forwards;
+}
+
+.dmo-toast-notification.dmo-fade-out {
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+@keyframes dmoSlideIn {
+  from {
+    transform: translateY(15px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

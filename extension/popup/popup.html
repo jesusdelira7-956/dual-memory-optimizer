@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dual-Memory Optimizer</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-box">
+    <div class="header">
+      <div class="brand">
+        <span class="icon">⚡</span>
+        <div>
+          <h2>Dual-Memory Optimizer</h2>
+          <span class="version">v2.0.0 • Sovereign MV3</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Savings Meter -->
+    <div class="savings-card">
+      <div class="metric">
+        <span class="num" id="popTokens">0</span>
+        <span class="lbl">Tokens Saved</span>
+      </div>
+      <div class="divider"></div>
+      <div class="metric">
+        <span class="num" id="popDollars">$0.00</span>
+        <span class="lbl">API Cost Saved</span>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="actions">
+      <button class="btn btn-primary" id="btnOpenSidepanel">
+        🚀 Open Dual-Memory Side Panel
+      </button>
+      <button class="btn btn-secondary" id="btnCondenseClipboard">
+        📋 Condense Clipboard Code Now
+      </button>
+    </div>
+
+    <!-- Toggles -->
+    <div class="settings-list">
+      <label class="toggle-row">
+        <span>Show Floating Assistant in AI Chats</span>
+        <input type="checkbox" id="chkFloating" checked>
+      </label>
+      <label class="toggle-row">
+        <span>Auto-Condense Large Code on Paste</span>
+        <input type="checkbox" id="chkAutoCondense">
+      </label>
+    </div>
+
+    <div class="footer">
+      <span>100% Client-Side • Zero Telemetry</span>
+      <a href="https://github.com/jesusdelira7-956/dual-memory-optimizer" target="_blank" class="link">GitHub</a>
+    </div>
+  </div>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

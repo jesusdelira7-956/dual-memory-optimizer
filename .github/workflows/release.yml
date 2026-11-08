@@ -1,0 +1,52 @@
+name: Build & Publish Chrome Extension Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Pillow for asset verification
+        run: pip install Pillow
+
+      - name: Run Manifest V3 & Asset Validation Suite
+        run: python3 test_extension.py
+
+      - name: Package Clean Chrome Extension ZIP
+        run: |
+          mkdir -p dist
+          python3 package_cws.py
+          cp dist/dual-memory-optimizer-cws-upload.zip dist/Dual-Memory-Optimizer-v2.0.0.zip
+
+      - name: Create or Update Latest GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v2.0.0
+          name: "Dual-Memory Optimizer v2.0.0 (Drag-and-Drop Chrome ZIP)"
+          body: |
+            ### ⚡ Dual-Memory Optimizer v2.0.0
+            **Sovereign Manifest V3 Chrome Extension** for slashing generative AI prompt context and token consumption by 70–85%.
+
+            #### ⚡ Fastest Install (Drag & Drop — No Unzipping Needed!)
+            1. Download **`Dual-Memory-Optimizer-v2.0.0.zip`** below.
+            2. Open `chrome://extensions/` in Chrome (or Brave/Edge) and turn on **Developer mode** (top right).
+            3. **Drag and drop `Dual-Memory-Optimizer-v2.0.0.zip`** directly onto the `chrome://extensions/` page!
+          files: dist/Dual-Memory-Optimizer-v2.0.0.zip
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

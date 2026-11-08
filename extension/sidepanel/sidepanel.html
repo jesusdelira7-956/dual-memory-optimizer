@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dual-Memory Optimizer - Power HUD</title>
+  <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body>
+  <div class="hud-container">
+    <!-- Header -->
+    <header class="hud-header">
+      <div class="brand">
+        <span class="logo-icon">⚡</span>
+        <div>
+          <h1>Dual-Memory Optimizer</h1>
+          <p class="tagline">Sovereign AI Context & Token Compressor</p>
+        </div>
+      </div>
+      <div class="stats-card">
+        <div class="stat-item">
+          <span class="stat-val" id="statTokens">0</span>
+          <span class="stat-lbl">Tokens Saved</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-val" id="statDollars">$0.00</span>
+          <span class="stat-lbl">Estimated Saved</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="hud-nav">
+      <button class="nav-tab active" data-tab="tab-working">⚡ Working Memory (Prompt Studio)</button>
+      <button class="nav-tab" data-tab="tab-persistent">🧠 Persistent Directives</button>
+      <button class="nav-tab" data-tab="tab-github">🌳 GitHub Map</button>
+    </nav>
+
+    <!-- Tab 1: Working Memory (Prompt Studio) -->
+    <section class="tab-pane active" id="tab-working">
+      <div class="input-section">
+        <div class="section-header">
+          <span class="label">Input Raw Code, JSON, or Stack Trace:</span>
+          <span class="token-meter" id="inputTokenCount">0 tokens</span>
+        </div>
+        <textarea id="rawInput" placeholder="Paste your 500-line Python class, TypeScript interface, JSON payload, or terminal error log here..."></textarea>
+      </div>
+
+      <div class="button-bar">
+        <button class="btn btn-primary" id="btnSignatures">🧬 Signatures Only (-75%)</button>
+        <button class="btn btn-secondary" id="btnSmart">⚡ Smart Condense</button>
+        <button class="btn btn-secondary" id="btnStrip">🧹 Strip Comments</button>
+        <button class="btn btn-secondary" id="btnTrace">📉 Stack Trace</button>
+      </div>
+
+      <div class="output-section">
+        <div class="section-header">
+          <span class="label">Optimized Output:</span>
+          <span class="savings-badge" id="savingsBadge">0% reduction</span>
+        </div>
+        <textarea id="optimizedOutput" readonly placeholder="Optimized code signatures and compressed context will appear here..."></textarea>
+        
+        <div class="action-footer">
+          <button class="btn btn-accent" id="btnCopy">📋 Copy to Clipboard</button>
+          <button class="btn btn-secondary" id="btnInjectActive">🚀 Inject into Active Chat</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 2: Persistent Directives -->
+    <section class="tab-pane" id="tab-persistent">
+      <div class="section-desc">
+        Persistent system rules and constraints stored locally on your device. These can be appended to any prompt with 1 click.
+      </div>
+      
+      <div class="directives-list" id="directivesList">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <div class="add-directive-box">
+        <h3>+ Add New Persistent Directive</h3>
+        <input type="text" id="newDirectiveTitle" placeholder="Title (e.g. TypeScript Only, No Yapping)">
+        <textarea id="newDirectiveContent" placeholder="Directive instructions for the AI..."></textarea>
+        <button class="btn btn-primary" id="btnAddDirective">Save Directive</button>
+      </div>
+
+      <button class="btn btn-accent" id="btnAppendDirectives">📥 Append Active Directives to Working Prompt</button>
+    </section>
+
+    <!-- Tab 3: GitHub Map -->
+    <section class="tab-pane" id="tab-github">
+      <div class="section-desc">
+        In-browser structural code mapping. Inspect repository trees and generate compact symbol maps for AI prompts without cloning.
+      </div>
+      <div class="gh-status-box" id="ghStatusBox">
+        <p>Navigate to any GitHub repository in Chrome, then click below to generate an AST Codebase Map.</p>
+        <button class="btn btn-primary" id="btnScanGitHub">🔍 Scan Active GitHub Page</button>
+      </div>
+      <pre class="gh-output" id="ghOutput">// GitHub code graph will render here...</pre>
+    </section>
+  </div>
+
+  <script type="module" src="sidepanel.js"></script>
+</body>
+</html>
