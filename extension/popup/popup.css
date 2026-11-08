@@ -126,6 +126,16 @@ body {
   background: var(--primary-hover);
 }
 
+.btn-accent {
+  background: linear-gradient(135deg, #06b6d4 0%, #0284c7 100%);
+  color: #0b0f19;
+  font-weight: 700;
+}
+.btn-accent:hover {
+  background: linear-gradient(135deg, #22d3ee 0%, #0369a1 100%);
+  color: #000;
+}
+
 .btn-secondary {
   background: #1e293b;
   color: #cbd5e1;

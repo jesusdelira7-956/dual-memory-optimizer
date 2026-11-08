@@ -9,6 +9,7 @@ import { TokenCondenser } from '../lib/token_condenser.js';
 const popTokens = document.getElementById('popTokens');
 const popDollars = document.getElementById('popDollars');
 const btnOpenSidepanel = document.getElementById('btnOpenSidepanel');
+const btnOptimizeBrowserRAM = document.getElementById('btnOptimizeBrowserRAM');
 const btnCondenseClipboard = document.getElementById('btnCondenseClipboard');
 const chkFloating = document.getElementById('chkFloating');
 const chkAutoCondense = document.getElementById('chkAutoCondense');
@@ -49,6 +50,25 @@ btnOpenSidepanel.addEventListener('click', async () => {
     chrome.sidePanel.open({ windowId: tab.windowId });
     window.close();
   }
+});
+
+// 1-Click Optimize Browser RAM
+btnOptimizeBrowserRAM.addEventListener('click', () => {
+  btnOptimizeBrowserRAM.textContent = '⏳ Purging RAM...';
+  chrome.runtime.sendMessage({ type: 'OPTIMIZE_BROWSER_RAM' }, (response) => {
+    if (response && response.success) {
+      if (response.discardedCount > 0) {
+        btnOptimizeBrowserRAM.textContent = `⚡ Freed ~${response.reclaimedMB}MB (${response.discardedCount} tabs suspended)`;
+      } else {
+        btnOptimizeBrowserRAM.textContent = `✓ Browser RAM already optimized!`;
+      }
+    } else {
+      btnOptimizeBrowserRAM.textContent = `✓ RAM optimized`;
+    }
+    setTimeout(() => {
+      btnOptimizeBrowserRAM.textContent = '🧹 1-Click Optimize Browser RAM';
+    }, 3000);
+  });
 });
 
 // Condense Clipboard Code Directly

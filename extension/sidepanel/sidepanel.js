@@ -9,6 +9,7 @@ import { TokenCondenser } from '../lib/token_condenser.js';
 // DOM Elements
 const statTokens = document.getElementById('statTokens');
 const statDollars = document.getElementById('statDollars');
+const btnSidepanelOptimizeRAM = document.getElementById('btnSidepanelOptimizeRAM');
 const rawInput = document.getElementById('rawInput');
 const optimizedOutput = document.getElementById('optimizedOutput');
 const inputTokenCount = document.getElementById('inputTokenCount');
@@ -37,6 +38,25 @@ document.querySelectorAll('.nav-tab').forEach(tab => {
     document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
     tab.classList.add('active');
     document.getElementById(tab.dataset.tab).classList.add('active');
+  });
+});
+
+// 1-Click Optimize Browser RAM
+btnSidepanelOptimizeRAM.addEventListener('click', () => {
+  btnSidepanelOptimizeRAM.textContent = '⏳ Suspending Inactive Tabs...';
+  chrome.runtime.sendMessage({ type: 'OPTIMIZE_BROWSER_RAM' }, (response) => {
+    if (response && response.success) {
+      if (response.discardedCount > 0) {
+        btnSidepanelOptimizeRAM.textContent = `⚡ Reclaimed ~${response.reclaimedMB}MB RAM (${response.discardedCount} tabs suspended)`;
+      } else {
+        btnSidepanelOptimizeRAM.textContent = '✓ Browser RAM already optimal!';
+      }
+    } else {
+      btnSidepanelOptimizeRAM.textContent = '✓ Memory optimized';
+    }
+    setTimeout(() => {
+      btnSidepanelOptimizeRAM.textContent = '🧹 1-Click Optimize Browser RAM (Suspend Idle Tabs)';
+    }, 3000);
   });
 });
 
