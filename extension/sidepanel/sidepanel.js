@@ -252,6 +252,134 @@ function escapeHtml(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+// ========================================================
+// Pillar 2: Data Loss Prevention (Backup & Restore)
+// ========================================================
+const btnExportBackup = document.getElementById('btnExportBackup');
+const fileRestoreBackup = document.getElementById('fileRestoreBackup');
+const backupStatus = document.getElementById('backupStatus');
+
+if (btnExportBackup) {
+  btnExportBackup.addEventListener('click', async () => {
+    try {
+      const stored = await chrome.storage.local.get(null);
+      const backupData = {
+        app: 'Dual-Memory Optimizer',
+        version: '2.0.0',
+        exportedAt: new Date().toISOString(),
+        persistentDirectives: stored.persistentDirectives || [],
+        settings: stored.settings || {},
+        stats: stored.stats || {},
+      };
+
+      const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const dateStr = new Date().toISOString().slice(0, 10);
+      a.download = `dual-memory-backup-${dateStr}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      if (backupStatus) {
+        backupStatus.textContent = '✓ Backup JSON exported successfully!';
+        backupStatus.style.color = '#10b981';
+      }
+    } catch (err) {
+      if (backupStatus) {
+        backupStatus.textContent = `Export failed: ${err.message}`;
+        backupStatus.style.color = '#ef4444';
+      }
+    }
+  });
+}
+
+if (fileRestoreBackup) {
+  fileRestoreBackup.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const parsed = JSON.parse(event.target.result);
+        if (parsed.app !== 'Dual-Memory Optimizer' && !parsed.persistentDirectives) {
+          throw new Error('Invalid backup file format.');
+        }
+
+        const updates = {};
+        if (Array.isArray(parsed.persistentDirectives)) updates.persistentDirectives = parsed.persistentDirectives;
+        if (parsed.settings) updates.settings = parsed.settings;
+        if (parsed.stats) updates.stats = parsed.stats;
+
+        await chrome.storage.local.set(updates);
+
+        // Also mirror to sync storage
+        if (updates.persistentDirectives) {
+          try {
+            await chrome.storage.sync.set({ persistentDirectives: updates.persistentDirectives });
+          } catch (_) {}
+        }
+
+        if (backupStatus) {
+          backupStatus.textContent = '✓ Backup restored successfully! Reloading...';
+          backupStatus.style.color = '#10b981';
+        }
+        setTimeout(() => window.location.reload(), 1200);
+      } catch (err) {
+        if (backupStatus) {
+          backupStatus.textContent = `Restore failed: ${err.message}`;
+          backupStatus.style.color = '#ef4444';
+        }
+      }
+    };
+    reader.readAsText(file);
+  });
+}
+
+// Diagnostics Exporter
+const btnCopyDiagnostics = document.getElementById('btnCopyDiagnostics');
+const btnOpenGitHubIssue = document.getElementById('btnOpenGitHubIssue');
+const diagStatus = document.getElementById('diagStatus');
+
+if (btnCopyDiagnostics) {
+  btnCopyDiagnostics.addEventListener('click', async () => {
+    try {
+      const stored = await chrome.storage.local.get(null);
+      const diagBundle = {
+        extension: 'Dual-Memory Optimizer',
+        version: '2.0.0',
+        timestamp: new Date().toISOString(),
+        userAgent: navigator.userAgent,
+        tokensSaved: stored.stats?.totalTokensSaved || 0,
+        promptsOptimized: stored.stats?.promptsOptimized || 0,
+        directivesCount: (stored.persistentDirectives || []).length,
+        settings: stored.settings || {},
+      };
+
+      const jsonStr = JSON.stringify(diagBundle, null, 2);
+      await navigator.clipboard.writeText(jsonStr);
+
+      if (diagStatus) {
+        diagStatus.textContent = '✓ Diagnostic telemetry copied to clipboard!';
+        diagStatus.style.color = '#10b981';
+      }
+    } catch (err) {
+      if (diagStatus) {
+        diagStatus.textContent = `Error copying: ${err.message}`;
+        diagStatus.style.color = '#ef4444';
+      }
+    }
+  });
+}
+
+if (btnOpenGitHubIssue) {
+  btnOpenGitHubIssue.addEventListener('click', () => {
+    const url = 'https://github.com/jesusdelira7-956/dual-memory-optimizer/issues/new?title=[Bug]+Dual-Memory+Optimizer+Report&labels=bug,extension';
+    chrome.tabs.create({ url });
+  });
+}
+
 // Initial Load
 refreshMetrics();
 loadDirectives();

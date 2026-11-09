@@ -31,9 +31,10 @@
 
     <!-- Navigation Tabs -->
     <nav class="hud-nav">
-      <button class="nav-tab active" data-tab="tab-working">⚡ Working Memory (Prompt Studio)</button>
-      <button class="nav-tab" data-tab="tab-persistent">🧠 Persistent Directives</button>
-      <button class="nav-tab" data-tab="tab-github">🌳 GitHub Map</button>
+      <button class="nav-tab active" data-tab="tab-working">⚡ Working</button>
+      <button class="nav-tab" data-tab="tab-persistent">🧠 Directives</button>
+      <button class="nav-tab" data-tab="tab-github">🌳 GitHub</button>
+      <button class="nav-tab" data-tab="tab-support">🛡️ Backup</button>
     </nav>
 
     <!-- Tab 1: Working Memory (Prompt Studio) -->
@@ -97,6 +98,36 @@
         <button class="btn btn-primary" id="btnScanGitHub">🔍 Scan Active GitHub Page</button>
       </div>
       <pre class="gh-output" id="ghOutput">// GitHub code graph will render here...</pre>
+    </section>
+
+    <!-- Tab 4: Backup & Support (Data Loss Prevention) -->
+    <section class="tab-pane" id="tab-support">
+      <div class="section-desc">
+        Pillar 2 Data Loss Prevention: Export offline backups of your persistent rules or bundle diagnostics for 1-click troubleshooting.
+      </div>
+
+      <div class="directive-card" style="padding: 12px; gap: 8px;">
+        <span class="directive-title">💾 Directives & Settings Backup</span>
+        <p class="directive-body">Export your custom prompt rules to a JSON file or restore from a previous snapshot.</p>
+        <div style="display: flex; gap: 8px; margin-top: 4px;">
+          <button class="btn btn-secondary" id="btnExportBackup" style="flex:1;">💾 Export Backup</button>
+          <label class="btn btn-secondary" style="flex:1; cursor: pointer;">
+            📂 Restore
+            <input type="file" id="fileRestoreBackup" accept=".json" style="display: none;">
+          </label>
+        </div>
+        <div id="backupStatus" style="font-size: 11px; margin-top: 4px;"></div>
+      </div>
+
+      <div class="directive-card" style="padding: 12px; gap: 8px;">
+        <span class="directive-title">📋 1-Click Diagnostics & Support</span>
+        <p class="directive-body">Encountered an issue or platform layout change? Copy diagnostic telemetry for your bug report.</p>
+        <div style="display: flex; gap: 8px; margin-top: 4px;">
+          <button class="btn btn-primary" id="btnCopyDiagnostics" style="flex:1;">📋 Copy Diagnostics</button>
+          <button class="btn btn-secondary" id="btnOpenGitHubIssue" style="flex:1;">🐞 Open GitHub Issue</button>
+        </div>
+        <div id="diagStatus" style="font-size: 11px; margin-top: 4px;"></div>
+      </div>
     </section>
   </div>
 

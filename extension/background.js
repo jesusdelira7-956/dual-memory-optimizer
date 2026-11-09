@@ -38,8 +38,36 @@ const DEFAULT_STORAGE = {
 chrome.runtime.onInstalled.addListener(async (details) => {
   console.log('[Dual-Memory Optimizer] Extension installed/updated:', details.reason);
 
+  // Pillar 2 Data Loss Prevention: Pre-update snapshot guard
+  if (details.reason === 'update') {
+    try {
+      const allLocal = await chrome.storage.local.get(null);
+      const backupKey = `backup_pre_upgrade_${details.previousVersion || 'v2'}_${Date.now()}`;
+      await chrome.storage.local.set({ [backupKey]: allLocal });
+      console.log(`[Dual-Memory Optimizer] Safety snapshot saved to ${backupKey}`);
+    } catch (err) {
+      console.error('[Dual-Memory Optimizer] Error creating pre-update snapshot:', err);
+    }
+  }
+
   const existing = await chrome.storage.local.get(['stats', 'settings', 'persistentDirectives']);
   const updates = {};
+
+  // Cloud Sync Auto-Recovery on new install / device change
+  if (details.reason === 'install') {
+    try {
+      const cloudSync = await chrome.storage.sync.get(['persistentDirectives', 'settings']);
+      if (cloudSync.persistentDirectives && cloudSync.persistentDirectives.length > 0) {
+        existing.persistentDirectives = cloudSync.persistentDirectives;
+        console.log('[Dual-Memory Optimizer] Recovered persistent directives from Chrome Cloud Sync.');
+      }
+      if (cloudSync.settings) {
+        existing.settings = cloudSync.settings;
+      }
+    } catch (err) {
+      console.warn('[Dual-Memory Optimizer] Cloud sync recovery skipped:', err);
+    }
+  }
 
   if (!existing.stats) updates.stats = DEFAULT_STORAGE.stats;
   if (!existing.settings) updates.settings = DEFAULT_STORAGE.settings;
