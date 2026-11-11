@@ -98,7 +98,9 @@ python3 execution/code_graph_query.py --symbol calculate_metrics
 
 If Dual-Memory Optimizer helps streamline your AI development workflows, slashes your token costs, or keeps your browser responsive, consider fueling further updates with a coffee:
 
-[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/JesseInTheLab)
+<a href="https://buymeacoffee.com/JesseInTheLab" target="_blank">
+  <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="50" style="border-radius: 8px;">
+</a>
 
 ---
 
