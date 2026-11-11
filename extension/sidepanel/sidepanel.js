@@ -380,6 +380,13 @@ if (btnOpenGitHubIssue) {
   });
 }
 
+const btnBuyCoffee = document.getElementById('btnBuyCoffee');
+if (btnBuyCoffee) {
+  btnBuyCoffee.addEventListener('click', () => {
+    chrome.tabs.create({ url: 'https://buymeacoffee.com/JesseInTheLab' });
+  });
+}
+
 // Initial Load
 refreshMetrics();
 loadDirectives();

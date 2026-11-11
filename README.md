@@ -2,6 +2,7 @@
 
 [![Manifest: V3](https://img.shields.io/badge/Chrome_Extension-Manifest_V3-success.svg?style=for-the-badge)](extension/manifest.json)
 [![Download Latest ZIP](https://img.shields.io/badge/⬇️_Download_Chrome_ZIP-v2.0.0-6366f1?style=for-the-badge)](https://github.com/jesusdelira7-956/dual-memory-optimizer/releases/latest/download/Dual-Memory-Optimizer-v2.0.0.zip)
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/JesseInTheLab)
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8+-blue.svg?style=for-the-badge)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
@@ -90,6 +91,14 @@ python3 execution/code_graph_query.py --symbol calculate_metrics
 - **Zero Remote Code:** Fully bundled local logic meeting Google Chrome Web Store Manifest V3 policies.
 - **Narrowly Scoped Permissions:** Scoped strictly to `chatgpt.com`, `claude.ai`, `gemini.google.com`, and `github.com`.
 - **Zero Data Collection:** Does not collect, track, transmit, or monetize any user data. See [PRIVACY.md](PRIVACY.md).
+
+---
+
+## ☕ Support Development
+
+If Dual-Memory Optimizer helps streamline your AI development workflows, slashes your token costs, or keeps your browser responsive, consider fueling further updates with a coffee:
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/JesseInTheLab)
 
 ---
 

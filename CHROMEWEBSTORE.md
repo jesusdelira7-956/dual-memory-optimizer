@@ -35,3 +35,7 @@ All AST extraction, comment stripping, and token metrics execute locally in your
 - **Zero Data Collection:** Does not collect, transmit, store on remote servers, or monetize any user data, prompt contents, or browsing history.
 - **Local-Only Processing:** All token condensation algorithms run strictly on the user's machine.
 - Full source code available on GitHub: https://github.com/jesusdelira7-956/dual-memory-optimizer
+
+## ☕ Support Open-Source Development
+If Dual-Memory Optimizer helps streamline your AI development workflows, slashes your token costs, or keeps your browser responsive, consider fueling further updates with a coffee:
+https://buymeacoffee.com/JesseInTheLab
