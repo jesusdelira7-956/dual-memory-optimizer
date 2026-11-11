@@ -265,7 +265,7 @@ if (btnExportBackup) {
       const stored = await chrome.storage.local.get(null);
       const backupData = {
         app: 'Dual-Memory Optimizer',
-        version: '2.0.0',
+        version: '2.0.1',
         exportedAt: new Date().toISOString(),
         persistentDirectives: stored.persistentDirectives || [],
         settings: stored.settings || {},
@@ -348,7 +348,7 @@ if (btnCopyDiagnostics) {
       const stored = await chrome.storage.local.get(null);
       const diagBundle = {
         extension: 'Dual-Memory Optimizer',
-        version: '2.0.0',
+        version: '2.0.1',
         timestamp: new Date().toISOString(),
         userAgent: navigator.userAgent,
         tokensSaved: stored.stats?.totalTokensSaved || 0,

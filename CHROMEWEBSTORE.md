@@ -4,8 +4,8 @@
 - **Name:** Dual-Memory Optimizer
 - **Summary:** Slashes AI prompt context & token consumption by 70-85% with 1-click code condensing and side panel context memory.
 - **Category:** Productivity / Developer Tools
-- **Version:** 2.0.0
-- **Last Updated:** 2026-11-08
+- **Version:** 2.0.1
+- **Last Updated:** 2026-11-10
 
 ## Detailed Description
 Dual-Memory Optimizer is an AI prompt engineering and context compression extension built for modern developers. It reduces prompt token consumption by 70% to 85% across ChatGPT, Claude, Gemini, and GitHub by tree-shaking pasted code and maintaining persistent project directives in an interactive side panel.

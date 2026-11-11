@@ -1,7 +1,7 @@
 # ⚡ Dual-Memory Optimizer (v2.0)
 
 [![Manifest: V3](https://img.shields.io/badge/Chrome_Extension-Manifest_V3-success.svg?style=for-the-badge)](extension/manifest.json)
-[![Download Latest ZIP](https://img.shields.io/badge/⬇️_Download_Chrome_ZIP-v2.0.0-6366f1?style=for-the-badge)](https://github.com/jesusdelira7-956/dual-memory-optimizer/releases/latest/download/Dual-Memory-Optimizer-v2.0.0.zip)
+[![Download Latest ZIP](https://img.shields.io/badge/⬇️_Download_Chrome_ZIP-v2.0.1-6366f1?style=for-the-badge)](https://github.com/jesusdelira7-956/dual-memory-optimizer/releases/latest/download/Dual-Memory-Optimizer-v2.0.1.zip)
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/JesseInTheLab)
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8+-blue.svg?style=for-the-badge)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
@@ -55,7 +55,7 @@ irm https://raw.githubusercontent.com/jesusdelira7-956/dual-memory-optimizer/mai
 ```
 
 *Or manually:*
-1. Download [`Dual-Memory-Optimizer-v2.0.0.zip`](https://github.com/jesusdelira7-956/dual-memory-optimizer/releases/latest/download/Dual-Memory-Optimizer-v2.0.0.zip).
+1. Download [`Dual-Memory-Optimizer-v2.0.1.zip`](https://github.com/jesusdelira7-956/dual-memory-optimizer/releases/latest/download/Dual-Memory-Optimizer-v2.0.1.zip).
 2. Open `chrome://extensions/` and toggle **Developer mode** (top-right).
 3. **Drag and drop the ZIP file** directly onto the extensions page!
 

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Dual-Memory Optimizer",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Slashes AI prompt context & token consumption by 70-85% with 1-click code condensing and side panel context memory.",
   "icons": {
     "16": "icons/icon-16.png",
