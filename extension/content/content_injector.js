@@ -2,7 +2,8 @@
  * content_injector.js
  * ===================
  * In-page floating assistant for web AI chatboxes (ChatGPT, Claude, Gemini)
- * and GitHub code pages. Injects one-click token optimizer badge.
+ * and GitHub code pages. Injects one-click token optimizer badge and handles
+ * framework-safe prompt injection & GitHub DOM scanning without `scripting` permission.
  */
 
 (() => {
@@ -13,24 +14,84 @@
 
   let floatingBadge = null;
   let activeInputElement = null;
+  let lastOriginalText = null;
+  let currentHref = window.location.href;
 
-  // Target selectors for chat inputs across popular platforms
+  let settings = {
+    floatingButtonEnabled: true,
+    autoCondenseOnPaste: false,
+    defaultMode: 'smart',
+  };
+
+  // Priority-ordered selectors from most specific semantic hook to structural fallback
   const INPUT_SELECTORS = [
-    '#prompt-textarea',                       // ChatGPT
-    'div[contenteditable="true"]',           // Claude, ChatGPT, Gemini
-    'textarea[placeholder*="Ask"]',          // Copilot / Generic
-    'textarea[placeholder*="Message"]',      // General AI chats
-    'div.ProseMirror',                       // Claude prose editor
-    'textarea.form-control',                 // GitHub issue/PR body
+    '#prompt-textarea',
+    '[data-testid*="chat-input"]',
+    'div.ProseMirror[contenteditable="true"]',
+    'div.ql-editor[contenteditable="true"]',
+    'div[contenteditable="true"][role="textbox"]',
+    'div[contenteditable="true"]',
+    'textarea[placeholder*="Ask"]',
+    'textarea[placeholder*="Message"]',
+    'textarea.form-control',
   ];
 
+  // Hydrate settings and listen for live popup/sidepanel changes
+  try {
+    chrome.storage.local.get(['settings'], (data) => {
+      if (data && data.settings) {
+        settings = { ...settings, ...data.settings };
+      }
+      updateBadgePosition();
+    });
+
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area === 'local' && changes.settings && changes.settings.newValue) {
+        settings = { ...settings, ...changes.settings.newValue };
+        updateBadgePosition();
+      }
+    });
+  } catch (_) {}
+
+  function isVisibleElement(el) {
+    if (!el || !el.isConnected) return false;
+    if (el.offsetParent !== null) return true;
+    const rect = el.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0 && window.getComputedStyle(el).visibility !== 'hidden';
+  }
+
+  function matchInputFromNode(node) {
+    if (!node || node.nodeType !== Node.ELEMENT_NODE) return null;
+    for (const sel of INPUT_SELECTORS) {
+      try {
+        if (node.matches && node.matches(sel) && isVisibleElement(node)) return node;
+        if (node.closest) {
+          const ancestor = node.closest(sel);
+          if (ancestor && isVisibleElement(ancestor)) return ancestor;
+        }
+      } catch (_) {}
+    }
+    return null;
+  }
+
   function getActiveInput() {
-    const active = document.activeElement;
-    if (!active) return null;
+    return matchInputFromNode(document.activeElement);
+  }
+
+  function findBestChatInput() {
+    if (activeInputElement && activeInputElement.isConnected && isVisibleElement(activeInputElement)) {
+      return activeInputElement;
+    }
+    const focused = getActiveInput();
+    if (focused) return focused;
 
     for (const sel of INPUT_SELECTORS) {
-      if (active.matches && active.matches(sel)) return active;
-      if (active.closest && active.closest(sel)) return active.closest(sel);
+      try {
+        const candidates = document.querySelectorAll(sel);
+        for (const el of candidates) {
+          if (isVisibleElement(el)) return el;
+        }
+      } catch (_) {}
     }
     return null;
   }
@@ -38,35 +99,89 @@
   function getInputText(el) {
     if (!el) return '';
     if (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') {
-      return el.value;
+      return el.value || '';
     }
     return el.innerText || el.textContent || '';
   }
 
+  /**
+   * Sets input text using native descriptors (React) or Selection/Range + execCommand
+   * (ProseMirror / TipTap / Quill) so frameworks enable their Submit button reliably.
+   */
   function setInputText(el, newText) {
     if (!el) return;
+    el.focus();
+
     if (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') {
-      el.value = newText;
-      el.dispatchEvent(new Event('input', { bubbles: true }));
+      const proto =
+        el.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype;
+      const descriptor = Object.getOwnPropertyDescriptor(proto, 'value');
+      if (descriptor && descriptor.set) {
+        descriptor.set.call(el, newText);
+      } else {
+        el.value = newText;
+      }
+      el.dispatchEvent(
+        new InputEvent('input', {
+          bubbles: true,
+          cancelable: true,
+          inputType: 'insertReplacementText',
+          data: newText,
+        })
+      );
       el.dispatchEvent(new Event('change', { bubbles: true }));
-    } else if (el.isContentEditable) {
-      el.innerText = newText;
-      el.dispatchEvent(new Event('input', { bubbles: true }));
+      return;
+    }
+
+    if (el.isContentEditable) {
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      selection.removeAllRanges();
+      selection.addRange(range);
+
+      let inserted = false;
+      try {
+        inserted = document.execCommand('insertText', false, newText);
+      } catch (_) {
+        inserted = false;
+      }
+      if (!inserted) {
+        el.textContent = newText;
+      }
+      el.dispatchEvent(
+        new InputEvent('input', {
+          bubbles: true,
+          cancelable: true,
+          inputType: 'insertReplacementText',
+        })
+      );
     }
   }
 
   function createFloatingBadge() {
-    if (floatingBadge) return;
+    if (floatingBadge && floatingBadge.isConnected) return;
 
     floatingBadge = document.createElement('div');
     floatingBadge.id = 'dual-memory-optimizer-pill';
-    floatingBadge.innerHTML = `
-      <div class="dmo-pill-content">
-        <span class="dmo-icon">⚡</span>
-        <span class="dmo-text">Condense Code</span>
-        <span class="dmo-badge">-70%</span>
-      </div>
-    `;
+
+    const content = document.createElement('div');
+    content.className = 'dmo-pill-content';
+
+    const icon = document.createElement('span');
+    icon.className = 'dmo-icon';
+    icon.textContent = '⚡';
+
+    const text = document.createElement('span');
+    text.className = 'dmo-text';
+    text.textContent = 'Condense';
+
+    const badge = document.createElement('span');
+    badge.className = 'dmo-badge';
+    badge.textContent = settings.defaultMode === 'signatures' ? 'SIG' : 'SMART';
+
+    content.append(icon, text, badge);
+    floatingBadge.appendChild(content);
 
     floatingBadge.addEventListener('click', (e) => {
       e.preventDefault();
@@ -74,17 +189,18 @@
       handleCondenseClick();
     });
 
-    document.body.appendChild(floatingBadge);
+    (document.body || document.documentElement).appendChild(floatingBadge);
   }
 
   function updateBadgePosition() {
-    if (!floatingBadge || !activeInputElement) {
-      if (floatingBadge) floatingBadge.style.display = 'none';
+    if (!floatingBadge) return;
+
+    if (settings.floatingButtonEnabled === false || !activeInputElement || !activeInputElement.isConnected) {
+      floatingBadge.style.display = 'none';
       return;
     }
 
     const text = getInputText(activeInputElement);
-    // Only show if there's enough text (e.g. > 100 characters)
     if (text.length < 120) {
       floatingBadge.style.display = 'none';
       return;
@@ -98,44 +214,179 @@
 
     floatingBadge.style.display = 'flex';
     floatingBadge.style.top = `${Math.max(10, window.scrollY + rect.top - 42)}px`;
-    floatingBadge.style.left = `${window.scrollX + rect.right - 180}px`;
+    floatingBadge.style.left = `${Math.max(10, window.scrollX + rect.right - 180)}px`;
   }
 
-  function showToast(message) {
+  function showToast(message, onUndo = null) {
+    const existing = document.querySelectorAll('.dmo-toast-notification');
+    existing.forEach((n) => n.remove());
+
     const toast = document.createElement('div');
     toast.className = 'dmo-toast-notification';
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    setTimeout(() => {
+
+    const msgSpan = document.createElement('span');
+    msgSpan.textContent = message;
+    toast.appendChild(msgSpan);
+
+    let timer = null;
+    if (typeof onUndo === 'function') {
+      const undoBtn = document.createElement('button');
+      undoBtn.type = 'button';
+      undoBtn.className = 'dmo-toast-undo';
+      undoBtn.textContent = 'Undo';
+      undoBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (timer) clearTimeout(timer);
+        onUndo();
+        toast.remove();
+      });
+      toast.appendChild(undoBtn);
+    }
+
+    (document.body || document.documentElement).appendChild(toast);
+    timer = setTimeout(() => {
       toast.classList.add('dmo-fade-out');
       setTimeout(() => toast.remove(), 400);
-    }, 2500);
+    }, typeof onUndo === 'function' ? 5000 : 2500);
   }
 
   function handleCondenseClick() {
-    if (!activeInputElement) return;
-    const rawText = getInputText(activeInputElement);
+    const target = findBestChatInput();
+    if (!target) return;
+
+    const rawText = getInputText(target);
     if (!rawText || rawText.length < 50) return;
 
-    chrome.runtime.sendMessage(
-      { type: 'OPTIMIZE_TEXT', text: rawText, mode: 'signatures' },
-      (response) => {
-        if (response && response.success && response.result) {
-          const res = response.result;
-          if (res.savedTokens > 0) {
-            setInputText(activeInputElement, res.optimizedText);
-            showToast(`✨ Saved ${res.savedTokens} tokens (${res.percentSaved}% reduction)!`);
-          } else {
-            showToast('ℹ️ Text is already compact.');
+    const mode = settings.defaultMode || 'smart';
+    lastOriginalText = rawText;
+
+    chrome.runtime.sendMessage({ type: 'OPTIMIZE_TEXT', text: rawText, mode }, (response) => {
+      if (chrome.runtime.lastError || !response || !response.success || !response.result) return;
+      const res = response.result;
+      if (res.savedTokens > 0) {
+        const snapshotBeforeCondense = rawText;
+        setInputText(target, res.optimizedText);
+        updateBadgePosition();
+        showToast(
+          `✨ Saved ${res.savedTokens} tokens (${res.percentSaved}% reduction)`,
+          () => setInputText(target, snapshotBeforeCondense)
+        );
+      } else {
+        showToast('ℹ️ Text is already compact.');
+      }
+    });
+  }
+
+  function scanGitHubDOM() {
+    const files = new Set();
+    const rowSelectors = [
+      'tr.react-directory-row',
+      'td.content a',
+      '[data-testid="file-name-id-wide"]',
+      '.js-navigation-item .js-navigation-open',
+    ];
+
+    for (const sel of rowSelectors) {
+      document.querySelectorAll(sel).forEach((row) => {
+        const line = (row.innerText || row.textContent || '').trim().split('\n')[0].trim();
+        if (line && !line.includes('..') && line !== 'History') {
+          files.add(line);
+        }
+      });
+    }
+
+    const symbols = [];
+    const codeLines = document.querySelectorAll('.blob-code-inner');
+    if (codeLines.length > 0) {
+      codeLines.forEach((lineEl) => {
+        const txt = (lineEl.textContent || '').trim();
+        if (/^(?:export\s+)?(?:async\s+)?(?:function|class|def|interface|type|func|fn|struct|impl)\b/.test(txt)) {
+          symbols.push(txt.slice(0, 120));
+        }
+      });
+    } else {
+      const roArea = document.querySelector('textarea#read-only-cursor-text-area');
+      if (roArea && roArea.value) {
+        for (const line of roArea.value.split('\n')) {
+          const txt = line.trim();
+          if (/^(?:export\s+)?(?:async\s+)?(?:function|class|def|interface|type|func|fn|struct|impl)\b/.test(txt)) {
+            symbols.push(txt.slice(0, 120));
           }
         }
       }
-    );
+    }
+
+    return {
+      url: window.location.href,
+      title: document.title,
+      files: Array.from(files),
+      symbols: symbols.slice(0, 80),
+    };
   }
 
-  // Listen to focus and input events across the document
+  // Handle Side Panel -> Content Script commands without needing `scripting` permission
+  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (!message || !message.type) return;
+
+    if (message.type === 'INJECT_PROMPT') {
+      const target = findBestChatInput();
+      if (!target) {
+        sendResponse({ success: false, error: 'No visible AI chat box found. Click inside the prompt input first.' });
+        return;
+      }
+      const previous = getInputText(target);
+      setInputText(target, message.text || '');
+      activeInputElement = target;
+      updateBadgePosition();
+      showToast('✨ Prompt injected!', previous ? () => setInputText(target, previous) : null);
+      sendResponse({ success: true });
+      return;
+    }
+
+    if (message.type === 'SCAN_GITHUB_PAGE') {
+      if (!window.location.hostname.includes('github.com')) {
+        sendResponse({ success: false, error: 'Active tab is not GitHub.' });
+        return;
+      }
+      sendResponse({ success: true, data: scanGitHubDOM() });
+      return;
+    }
+  });
+
+  // Intercept large pastes (> 1500 chars) when Auto-Condense on Paste is enabled
+  document.addEventListener('paste', (e) => {
+    if (!settings.autoCondenseOnPaste) return;
+    const target = matchInputFromNode(e.target);
+    if (!target) return;
+
+    const pasted = e.clipboardData?.getData('text/plain') || '';
+    if (pasted.length <= 1500) return;
+
+    e.preventDefault();
+    const existingText = getInputText(target);
+    const combinedRaw = existingText ? `${existingText}\n${pasted}` : pasted;
+
+    chrome.runtime.sendMessage({ type: 'OPTIMIZE_TEXT', text: pasted, mode: 'smart' }, (response) => {
+      if (!chrome.runtime.lastError && response && response.success && response.result && response.result.savedTokens > 0) {
+        const condensed = existingText
+          ? `${existingText}\n${response.result.optimizedText}`
+          : response.result.optimizedText;
+        setInputText(target, condensed);
+        showToast(
+          `✨ Auto-condensed paste: saved ${response.result.savedTokens} tokens (${response.result.percentSaved}%)`,
+          () => setInputText(target, combinedRaw)
+        );
+      } else {
+        setInputText(target, combinedRaw);
+      }
+      updateBadgePosition();
+    });
+  });
+
+  // Focus, input, scroll & resize listeners
   document.addEventListener('focusin', (e) => {
-    const input = getActiveInput();
+    const input = matchInputFromNode(e.target) || getActiveInput();
     if (input) {
       activeInputElement = input;
       createFloatingBadge();
@@ -151,7 +402,39 @@
     updateBadgePosition();
   });
 
-  window.addEventListener('scroll', () => {
-    updateBadgePosition();
-  }, { passive: true });
+  window.addEventListener(
+    'scroll',
+    () => {
+      updateBadgePosition();
+    },
+    { passive: true }
+  );
+
+  // SPA navigation watcher (ChatGPT / Claude / Gemini / GitHub Turbo)
+  let navDebounce = null;
+  function checkRouteChange() {
+    if (window.location.href !== currentHref) {
+      currentHref = window.location.href;
+      activeInputElement = findBestChatInput();
+      updateBadgePosition();
+    }
+  }
+
+  window.addEventListener('popstate', checkRouteChange);
+
+  const navObserver = new MutationObserver(() => {
+    if (navDebounce) return;
+    navDebounce = setTimeout(() => {
+      navDebounce = null;
+      checkRouteChange();
+    }, 250);
+  });
+
+  if (document.body) {
+    navObserver.observe(document.body, { childList: true, subtree: true });
+  } else {
+    document.addEventListener('DOMContentLoaded', () => {
+      if (document.body) navObserver.observe(document.body, { childList: true, subtree: true });
+    });
+  }
 })();

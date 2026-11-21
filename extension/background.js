@@ -34,16 +34,61 @@ const DEFAULT_STORAGE = {
   ],
 };
 
+const PROTECTED_AI_ORIGINS = [
+  'chatgpt.com',
+  'claude.ai',
+  'gemini.google.com',
+  'perplexity.ai',
+  'aistudio.google.com',
+  'chat.deepseek.com',
+  'grok.com',
+];
+
+function isProtectedTabUrl(url) {
+  if (!url) return false;
+  try {
+    const { hostname } = new URL(url);
+    return PROTECTED_AI_ORIGINS.some(
+      (domain) => hostname === domain || hostname.endsWith(`.${domain}`)
+    );
+  } catch (_) {
+    return false;
+  }
+}
+
 // Lifecycle: Install & Update
 chrome.runtime.onInstalled.addListener(async (details) => {
   console.log('[Dual-Memory Optimizer] Extension installed/updated:', details.reason);
 
-  // Pillar 2 Data Loss Prevention: Pre-update snapshot guard
+  // Pillar 2 Data Loss Prevention: Pre-update snapshot guard (strip old backups to avoid 2^N growth)
   if (details.reason === 'update') {
     try {
       const allLocal = await chrome.storage.local.get(null);
+      const snapshotPayload = {};
+      const existingBackupKeys = [];
+
+      for (const [k, v] of Object.entries(allLocal)) {
+        if (k.startsWith('backup_pre_upgrade_')) {
+          existingBackupKeys.push(k);
+        } else {
+          snapshotPayload[k] = v;
+        }
+      }
+
       const backupKey = `backup_pre_upgrade_${details.previousVersion || 'v2'}_${Date.now()}`;
-      await chrome.storage.local.set({ [backupKey]: allLocal });
+      await chrome.storage.local.set({ [backupKey]: snapshotPayload });
+
+      // Keep at most the 2 most recent pre-upgrade snapshots
+      const allBackupKeys = [...existingBackupKeys, backupKey].sort((a, b) => {
+        const tsA = Number(a.split('_').pop()) || 0;
+        const tsB = Number(b.split('_').pop()) || 0;
+        return tsA - tsB;
+      });
+      if (allBackupKeys.length > 2) {
+        const keysToRemove = allBackupKeys.slice(0, allBackupKeys.length - 2);
+        await chrome.storage.local.remove(keysToRemove);
+      }
+
       console.log(`[Dual-Memory Optimizer] Safety snapshot saved to ${backupKey}`);
     } catch (err) {
       console.error('[Dual-Memory Optimizer] Error creating pre-update snapshot:', err);
@@ -112,16 +157,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.type === 'OPTIMIZE_BROWSER_RAM') {
-    chrome.tabs.query({ active: false }, (tabs) => {
+    chrome.tabs.query({ active: false }, async (tabs) => {
       let discardedCount = 0;
       for (const tab of tabs) {
-        // Discard non-audible, non-pinned background tabs to free physical RAM
-        if (!tab.audible && !tab.discarded && tab.id) {
-          try {
-            chrome.tabs.discard(tab.id);
-            discardedCount++;
-          } catch (_) {}
+        // Skip active, pinned, audible, already-discarded, and protected AI streaming tabs
+        if (
+          !tab.id ||
+          tab.active ||
+          tab.pinned ||
+          tab.audible ||
+          tab.discarded ||
+          isProtectedTabUrl(tab.url)
+        ) {
+          continue;
         }
+        try {
+          await chrome.tabs.discard(tab.id);
+          discardedCount++;
+        } catch (_) {}
       }
       const reclaimedMB = Math.round(discardedCount * 85); // ~85MB average per discarded tab
       sendResponse({ success: true, discardedCount, reclaimedMB });

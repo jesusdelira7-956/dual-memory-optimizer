@@ -12,6 +12,8 @@ permissions:
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -24,29 +26,32 @@ jobs:
       - name: Install Pillow for asset verification
         run: pip install Pillow
 
-      - name: Run Manifest V3 & Asset Validation Suite
-        run: python3 test_extension.py
-
-      - name: Package Clean Chrome Extension ZIP
+      - name: Read Manifest Version
+        id: meta
         run: |
-          mkdir -p dist
+          VERSION=$(python3 -c "import json; print(json.load(open('extension/manifest.json'))['version'])")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Run Validation, Permission Audit & Package Extension
+        run: |
+          python3 test_extension.py
+          python3 audit_permissions.py
           python3 package_cws.py
-          cp dist/dual-memory-optimizer-cws-upload.zip dist/Dual-Memory-Optimizer-v2.0.0.zip
 
       - name: Create or Update Latest GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v2.0.0
-          name: "Dual-Memory Optimizer v2.0.0 (Drag-and-Drop Chrome ZIP)"
+          tag_name: v${{ steps.meta.outputs.version }}
+          name: "Dual-Memory Optimizer v${{ steps.meta.outputs.version }} (Drag-and-Drop Chrome ZIP)"
           body: |
-            ### ⚡ Dual-Memory Optimizer v2.0.0
+            ### ⚡ Dual-Memory Optimizer v${{ steps.meta.outputs.version }}
             **Sovereign Manifest V3 Chrome Extension** for slashing generative AI prompt context and token consumption by 70–85%.
 
             #### ⚡ Fastest Install (Drag & Drop — No Unzipping Needed!)
-            1. Download **`Dual-Memory-Optimizer-v2.0.0.zip`** below.
+            1. Download **`Dual-Memory-Optimizer-v${{ steps.meta.outputs.version }}.zip`** below.
             2. Open `chrome://extensions/` in Chrome (or Brave/Edge) and turn on **Developer mode** (top right).
-            3. **Drag and drop `Dual-Memory-Optimizer-v2.0.0.zip`** directly onto the `chrome://extensions/` page!
-          files: dist/Dual-Memory-Optimizer-v2.0.0.zip
+            3. **Drag and drop `Dual-Memory-Optimizer-v${{ steps.meta.outputs.version }}.zip`** directly onto the `chrome://extensions/` page!
+          files: dist/Dual-Memory-Optimizer-v${{ steps.meta.outputs.version }}.zip
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

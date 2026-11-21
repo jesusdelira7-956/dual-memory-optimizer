@@ -11,14 +11,7 @@
   "permissions": [
     "storage",
     "sidePanel",
-    "activeTab",
     "tabs"
-  ],
-  "host_permissions": [
-    "https://chatgpt.com/*",
-    "https://claude.ai/*",
-    "https://gemini.google.com/*",
-    "https://github.com/*"
   ],
   "background": {
     "service_worker": "background.js",

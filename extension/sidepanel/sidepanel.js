@@ -108,30 +108,28 @@ btnCopy.addEventListener('click', async () => {
   setTimeout(() => (btnCopy.textContent = orig), 1500);
 });
 
-// Inject into Active Web Tab
+// Inject into Active Web Tab via content script messaging (no `scripting` permission needed)
 btnInjectActive.addEventListener('click', async () => {
   if (!optimizedOutput.value) return;
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab || !tab.id) return;
+  if (!tab || !tab.id) {
+    savingsBadge.textContent = '⚠️ No active tab found.';
+    savingsBadge.style.color = '#f59e0b';
+    return;
+  }
 
-  chrome.scripting.executeScript({
-    target: { tabId: tab.id },
-    func: (textToInject) => {
-      const active = document.activeElement;
-      if (active && (active.tagName === 'TEXTAREA' || active.isContentEditable)) {
-        if (active.tagName === 'TEXTAREA') {
-          active.value = textToInject;
-          active.dispatchEvent(new Event('input', { bubbles: true }));
-        } else {
-          active.innerText = textToInject;
-          active.dispatchEvent(new Event('input', { bubbles: true }));
-        }
-        alert('✨ Injected optimized prompt into active chat!');
-      } else {
-        alert('Please click inside your ChatGPT or Claude message box first!');
-      }
-    },
-    args: [optimizedOutput.value],
+  chrome.tabs.sendMessage(tab.id, { type: 'INJECT_PROMPT', text: optimizedOutput.value }, (response) => {
+    if (chrome.runtime.lastError || !response || !response.success) {
+      const reason = chrome.runtime.lastError
+        ? 'Refresh this AI chat tab or open a supported AI surface first.'
+        : response?.error || 'Could not inject into active tab.';
+      savingsBadge.textContent = `⚠️ ${reason}`;
+      savingsBadge.style.color = '#f59e0b';
+      return;
+    }
+
+    savingsBadge.textContent = '✓ Injected into active chat!';
+    savingsBadge.style.color = '#10b981';
   });
 });
 
@@ -208,7 +206,7 @@ btnAppendDirectives.addEventListener('click', async () => {
   document.querySelector('.nav-tab[data-tab="tab-working"]').click();
 });
 
-// GitHub Scanner
+// GitHub Scanner (routes via content script message — zero `scripting` permission)
 btnScanGitHub.addEventListener('click', async () => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab || !tab.url || !tab.url.includes('github.com')) {
@@ -218,33 +216,29 @@ btnScanGitHub.addEventListener('click', async () => {
 
   ghOutput.textContent = 'Scanning GitHub DOM for repository tree and symbols...';
 
-  chrome.scripting.executeScript({
-    target: { tabId: tab.id },
-    func: () => {
-      // Find repo files in GitHub file tree view
-      const fileRows = document.querySelectorAll('tr.react-directory-row, td.content a');
-      const files = [];
-      fileRows.forEach(row => {
-        const text = row.innerText.trim();
-        if (text && !text.includes('..') && !text.includes('History')) {
-          files.push(text.split('\n')[0]);
-        }
-      });
-      return {
-        url: window.location.href,
-        title: document.title,
-        files: [...new Set(files)],
-      };
-    },
-  }, (results) => {
-    if (results && results[0] && results[0].result) {
-      const data = results[0].result;
-      const map = `[GITHUB CODEBASE MAP]: ${data.title}\nURL: ${data.url}\n\nFILES IDENTIFIED:\n` +
-        data.files.map(f => `├── ${f}`).join('\n');
-      ghOutput.textContent = map;
-      rawInput.value = map;
-      rawInput.dispatchEvent(new Event('input'));
+  chrome.tabs.sendMessage(tab.id, { type: 'SCAN_GITHUB_PAGE' }, (response) => {
+    if (chrome.runtime.lastError || !response || !response.success || !response.data) {
+      ghOutput.textContent =
+        '⚠️ Could not reach the Dual-Memory Optimizer assistant on this GitHub tab.\nPlease refresh the GitHub page and click Scan again.';
+      return;
     }
+
+    const data = response.data;
+    const sections = [`[GITHUB CODEBASE MAP]: ${data.title}`, `URL: ${data.url}`];
+    if (data.files && data.files.length > 0) {
+      sections.push(`\nFILES IDENTIFIED (${data.files.length}):\n` + data.files.map((f) => `├── ${f}`).join('\n'));
+    }
+    if (data.symbols && data.symbols.length > 0) {
+      sections.push(`\nSYMBOLS EXTRACTED (${data.symbols.length}):\n` + data.symbols.map((s) => `  • ${s}`).join('\n'));
+    }
+    if ((!data.files || data.files.length === 0) && (!data.symbols || data.symbols.length === 0)) {
+      sections.push('\nNo repository file rows or source code blocks detected on this view.');
+    }
+
+    const map = sections.join('\n');
+    ghOutput.textContent = map;
+    rawInput.value = map;
+    rawInput.dispatchEvent(new Event('input'));
   });
 });
 
@@ -265,7 +259,7 @@ if (btnExportBackup) {
       const stored = await chrome.storage.local.get(null);
       const backupData = {
         app: 'Dual-Memory Optimizer',
-        version: '2.0.1',
+        version: chrome.runtime.getManifest().version,
         exportedAt: new Date().toISOString(),
         persistentDirectives: stored.persistentDirectives || [],
         settings: stored.settings || {},
@@ -348,7 +342,7 @@ if (btnCopyDiagnostics) {
       const stored = await chrome.storage.local.get(null);
       const diagBundle = {
         extension: 'Dual-Memory Optimizer',
-        version: '2.0.1',
+        version: chrome.runtime.getManifest().version,
         timestamp: new Date().toISOString(),
         userAgent: navigator.userAgent,
         tokensSaved: stored.stats?.totalTokensSaved || 0,

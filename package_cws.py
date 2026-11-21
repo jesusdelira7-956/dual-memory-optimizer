@@ -7,10 +7,13 @@ ready for direct upload to the Google Chrome Web Store Developer Dashboard.
 """
 
 import os
+import sys
 import json
 import shutil
 import zipfile
 from pathlib import Path
+
+from audit_permissions import audit
 
 REPO_DIR = Path(__file__).resolve().parent
 EXT_DIR = REPO_DIR / "extension"
@@ -18,13 +21,22 @@ DIST_DIR = REPO_DIR / "dist"
 DIST_DIR.mkdir(parents=True, exist_ok=True)
 CWS_ZIP = DIST_DIR / "dual-memory-optimizer-cws-upload.zip"
 
-EXCLUDE_DIRS = {"__pycache__", ".git", "_metadata"}
+EXCLUDE_DIRS = {"__pycache__", ".git", "_metadata", "node_modules", "tests", "scripts"}
 EXCLUDE_FILES = {".DS_Store", "thumbs.db"}
 
 def build_package():
     manifest_p = EXT_DIR / "manifest.json"
     with open(manifest_p, "r", encoding="utf-8") as f:
-        version = json.load(f).get("version", "2.0.1")
+        manifest_data = json.load(f)
+    version = manifest_data.get("version", "2.0.1")
+
+    violations, report = audit(manifest_data)
+    print("\n".join(report))
+    if violations:
+        print("\n[FAIL] Packaging aborted - permission policy violations:")
+        for v in violations:
+            print(f"  - {v}")
+        sys.exit(1)
 
     print(f"[*] Packaging Dual-Memory Optimizer v{version} Chrome Web Store upload archive...")
     if CWS_ZIP.exists():

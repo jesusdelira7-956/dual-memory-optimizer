@@ -28,6 +28,14 @@ def test_manifest():
     print("[+] manifest.json schema, name, and permissions: OK")
     return data
 
+def test_least_privilege(manifest):
+    from audit_permissions import audit
+    violations, _ = audit(manifest)
+    assert not violations, f"Unused or excessive permissions detected: {violations}"
+    assert "activeTab" not in manifest.get("permissions", []), "activeTab is unused"
+    assert not manifest.get("host_permissions"), "root host_permissions redundant (content_scripts self-grant)"
+    print("[+] Least-privilege permission audit: OK")
+
 def test_icons(manifest):
     icons = manifest.get("icons", {})
     assert "16" in icons and "48" in icons and "128" in icons, "Missing icon sizes"
@@ -62,6 +70,7 @@ def test_frontend_assets():
 def main():
     print("=== Testing Dual-Memory Optimizer Extension ===")
     manifest = test_manifest()
+    test_least_privilege(manifest)
     test_icons(manifest)
     test_frontend_assets()
     print("\n✅ All Manifest V3 Extension Tests Passed Successfully!")
