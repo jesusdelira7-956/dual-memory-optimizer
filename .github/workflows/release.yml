@@ -26,17 +26,29 @@ jobs:
       - name: Install Pillow for asset verification
         run: pip install Pillow
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
       - name: Read Manifest Version
         id: meta
         run: |
           VERSION=$(python3 -c "import json; print(json.load(open('extension/manifest.json'))['version'])")
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Run Validation, Permission Audit & Package Extension
+      - name: Run Validation, Permission Audit, Unit Tests & Package Extension
         run: |
           python3 test_extension.py
           python3 audit_permissions.py
+          node --test tests/token_condenser.test.mjs
           python3 package_cws.py
+
+      - name: Upload CWS Package Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cws-upload-package
+          path: dist/dual-memory-optimizer-cws-upload.zip
 
       - name: Create or Update Latest GitHub Release
         uses: softprops/action-gh-release@v2
@@ -45,7 +57,7 @@ jobs:
           name: "Dual-Memory Optimizer v${{ steps.meta.outputs.version }} (Drag-and-Drop Chrome ZIP)"
           body: |
             ### ⚡ Dual-Memory Optimizer v${{ steps.meta.outputs.version }}
-            **Sovereign Manifest V3 Chrome Extension** for slashing generative AI prompt context and token consumption by 70–85%.
+            **Sovereign Manifest V3 Chrome Extension** for slashing generative AI prompt context and token consumption by 70–85%, with client-side secret scrubbing and Built-in Gemini Nano support.
 
             #### ⚡ Fastest Install (Drag & Drop — No Unzipping Needed!)
             1. Download **`Dual-Memory-Optimizer-v${{ steps.meta.outputs.version }}.zip`** below.
@@ -55,3 +67,32 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  cws-draft-upload:
+    needs: build-and-release
+    if: vars.ENABLE_CWS_UPLOAD == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Verified CWS Package
+        uses: actions/download-artifact@v4
+        with:
+          name: cws-upload-package
+          path: dist
+
+      - name: Upload Draft Package via Chrome Web Store API
+        env:
+          CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+          CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+          CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+          CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+        run: |
+          ACCESS_TOKEN=$(curl -fsS -X POST https://oauth2.googleapis.com/token \
+            -d "client_id=${CHROME_CLIENT_ID}" \
+            -d "client_secret=${CHROME_CLIENT_SECRET}" \
+            -d "refresh_token=${CHROME_REFRESH_TOKEN}" \
+            -d "grant_type=refresh_token" | python3 -c "import sys, json; print(json.load(sys.stdin)['access_token'])")
+          curl -fsS -X PUT \
+            -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+            -H "x-goog-api-version: 2" \
+            -T dist/dual-memory-optimizer-cws-upload.zip \
+            "https://www.googleapis.com/upload/chromewebstore/v1.1/items/${CHROME_EXTENSION_ID}"
