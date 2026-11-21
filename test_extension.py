@@ -52,6 +52,7 @@ def test_frontend_assets():
     required_files = [
         "background.js",
         "lib/token_condenser.js",
+        "lib/builtin_ai.js",
         "content/content_injector.js",
         "content/content.css",
         "popup/popup.html",

@@ -159,6 +159,19 @@
     }
   }
 
+  function hasSensitiveSecret(text) {
+    if (!text || text.length < 12) return false;
+    return (
+      /\bAKIA[0-9A-Z]{16}\b/.test(text) ||
+      /\bsk-(?:proj-|ant-[A-Za-z0-9_-]*-)?[A-Za-z0-9_-]{20,}\b/.test(text) ||
+      /\b(?:(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})\b/.test(text) ||
+      /\bAIza[0-9A-Za-z_-]{35}\b/.test(text) ||
+      /\beyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/.test(text) ||
+      /-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----/.test(text) ||
+      /^[A-Z0-9_]*(?:API_KEY|SECRET|PASSWORD|PASSWD|TOKEN|PRIVATE_KEY)[A-Z0-9_]*\s*=\s*[^\s#]{6,}/m.test(text)
+    );
+  }
+
   function createFloatingBadge() {
     if (floatingBadge && floatingBadge.isConnected) return;
 
@@ -201,9 +214,28 @@
     }
 
     const text = getInputText(activeInputElement);
-    if (text.length < 120) {
+    const secretFound = hasSensitiveSecret(text);
+    if (!secretFound && text.length < 120) {
       floatingBadge.style.display = 'none';
       return;
+    }
+
+    const badgeSpan = floatingBadge.querySelector('.dmo-badge');
+    const textSpan = floatingBadge.querySelector('.dmo-text');
+    if (secretFound) {
+      floatingBadge.classList.add('dmo-pill-secret');
+      if (textSpan) textSpan.textContent = '🔒 Secret Detected';
+      if (badgeSpan) {
+        badgeSpan.classList.add('dmo-badge-secret');
+        badgeSpan.textContent = 'REDACT';
+      }
+    } else {
+      floatingBadge.classList.remove('dmo-pill-secret');
+      if (textSpan) textSpan.textContent = 'Condense';
+      if (badgeSpan) {
+        badgeSpan.classList.remove('dmo-badge-secret');
+        badgeSpan.textContent = settings.defaultMode === 'signatures' ? 'SIG' : 'SMART';
+      }
     }
 
     const rect = activeInputElement.getBoundingClientRect();
@@ -214,7 +246,7 @@
 
     floatingBadge.style.display = 'flex';
     floatingBadge.style.top = `${Math.max(10, window.scrollY + rect.top - 42)}px`;
-    floatingBadge.style.left = `${Math.max(10, window.scrollX + rect.right - 180)}px`;
+    floatingBadge.style.left = `${Math.max(10, window.scrollX + rect.right - 205)}px`;
   }
 
   function showToast(message, onUndo = null) {
@@ -256,22 +288,24 @@
     if (!target) return;
 
     const rawText = getInputText(target);
-    if (!rawText || rawText.length < 50) return;
+    const secretDetected = hasSensitiveSecret(rawText);
+    if (!rawText || (!secretDetected && rawText.length < 50)) return;
 
-    const mode = settings.defaultMode || 'smart';
+    const mode = secretDetected ? 'redact' : (settings.defaultMode || 'smart');
     lastOriginalText = rawText;
 
     chrome.runtime.sendMessage({ type: 'OPTIMIZE_TEXT', text: rawText, mode }, (response) => {
       if (chrome.runtime.lastError || !response || !response.success || !response.result) return;
       const res = response.result;
-      if (res.savedTokens > 0) {
+      if (res.secretsRedacted > 0 || res.savedTokens > 0) {
         const snapshotBeforeCondense = rawText;
         setInputText(target, res.optimizedText);
         updateBadgePosition();
-        showToast(
-          `✨ Saved ${res.savedTokens} tokens (${res.percentSaved}% reduction)`,
-          () => setInputText(target, snapshotBeforeCondense)
-        );
+        const msg =
+          res.secretsRedacted > 0
+            ? `🔒 Redacted ${res.secretsRedacted} secret(s) safely`
+            : `✨ Saved ${res.savedTokens} tokens (${res.percentSaved}% reduction)`;
+        showToast(msg, () => setInputText(target, snapshotBeforeCondense));
       } else {
         showToast('ℹ️ Text is already compact.');
       }

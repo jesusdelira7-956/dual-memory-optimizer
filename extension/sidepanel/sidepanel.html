@@ -44,7 +44,8 @@
           <span class="label">Input Raw Code, JSON, or Stack Trace:</span>
           <span class="token-meter" id="inputTokenCount">0 tokens</span>
         </div>
-        <textarea id="rawInput" placeholder="Paste your 500-line Python class, TypeScript interface, JSON payload, or terminal error log here..."></textarea>
+        <textarea id="rawInput" placeholder="Paste your 500-line Python class, TypeScript interface, JSON payload, or mixed Markdown prompt here..."></textarea>
+        <div class="secret-alert-banner" id="secretAlertBanner" style="display: none;"></div>
       </div>
 
       <div class="button-bar">
@@ -52,6 +53,8 @@
         <button class="btn btn-secondary" id="btnSmart">⚡ Smart Condense</button>
         <button class="btn btn-secondary" id="btnStrip">🧹 Strip Comments</button>
         <button class="btn btn-secondary" id="btnTrace">📉 Stack Trace</button>
+        <button class="btn btn-secondary" id="btnScrubSecrets">🔒 Scrub Secrets</button>
+        <button class="btn btn-secondary" id="btnNanoSummarize" title="Uses Chrome Built-in Gemini Nano when available">✨ Nano Summarize</button>
       </div>
 
       <div class="output-section">
@@ -71,7 +74,13 @@
     <!-- Tab 2: Persistent Directives -->
     <section class="tab-pane" id="tab-persistent">
       <div class="section-desc">
-        Persistent system rules and constraints stored locally on your device. These can be appended to any prompt with 1 click.
+        Persistent system rules stored locally. Supports <code>{{lang}}</code>, <code>{{date}}</code>, and <code>{{selection}}</code> variables.
+      </div>
+
+      <div class="preset-bar" style="display: flex; flex-wrap: wrap; gap: 6px;">
+        <button class="btn btn-secondary btn-preset" data-preset="code_review" style="flex:1; font-size: 10px;">+ Code Review</button>
+        <button class="btn btn-secondary btn-preset" data-preset="debug_mode" style="flex:1; font-size: 10px;">+ Debug Mode</button>
+        <button class="btn btn-secondary btn-preset" data-preset="arch_audit" style="flex:1; font-size: 10px;">+ Architecture Audit</button>
       </div>
       
       <div class="directives-list" id="directivesList">
@@ -103,7 +112,14 @@
     <!-- Tab 4: Backup & Support (Data Loss Prevention) -->
     <section class="tab-pane" id="tab-support">
       <div class="section-desc">
-        Pillar 2 Data Loss Prevention: Export offline backups of your persistent rules or bundle diagnostics for 1-click troubleshooting.
+        Pillar 2 Data Loss Prevention & Optional AI Surfaces: Export backups, bundle diagnostics, or grant optional access to extra AI chats.
+      </div>
+
+      <div class="directive-card" style="padding: 12px; gap: 8px;">
+        <span class="directive-title">🌐 Optional AI Platforms (Zero Extra Permissions Until Enabled)</span>
+        <p class="directive-body">Enable the floating assistant and prompt injector on additional AI web UIs on-demand:</p>
+        <div id="optionalPlatformsList" style="display: flex; flex-direction: column; gap: 6px; margin-top: 4px;"></div>
+        <div id="platformStatus" style="font-size: 11px; margin-top: 2px; color: #94a3b8;"></div>
       </div>
 
       <div class="directive-card" style="padding: 12px; gap: 8px;">

@@ -51,6 +51,16 @@
   border-radius: 10px;
 }
 
+.dmo-badge-secret {
+  background: #dc2626;
+  color: #fef3c7;
+}
+
+#dual-memory-optimizer-pill.dmo-pill-secret {
+  border-color: #f59e0b;
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.45);
+}
+
 .dmo-toast-notification {
   position: fixed;
   bottom: 24px;

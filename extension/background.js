@@ -56,6 +56,56 @@ function isProtectedTabUrl(url) {
   }
 }
 
+const OPTIONAL_PLATFORM_SCRIPTS_ID = 'dmo-optional-platforms';
+const OPTIONAL_PLATFORM_ORIGINS = [
+  'https://perplexity.ai/*',
+  'https://www.perplexity.ai/*',
+  'https://aistudio.google.com/*',
+  'https://chat.deepseek.com/*',
+  'https://grok.com/*',
+  'http://localhost/*',
+  'http://127.0.0.1/*',
+];
+
+async function syncOptionalPlatformScripts() {
+  if (!chrome.scripting || !chrome.scripting.registerContentScripts) return { granted: [] };
+  try {
+    const perms = await chrome.permissions.getAll();
+    const grantedSet = new Set(perms.origins || []);
+    const activeMatches = OPTIONAL_PLATFORM_ORIGINS.filter((origin) => grantedSet.has(origin));
+
+    const existing = await chrome.scripting.getRegisteredContentScripts({
+      ids: [OPTIONAL_PLATFORM_SCRIPTS_ID],
+    }).catch(() => []);
+
+    if (existing.length > 0) {
+      await chrome.scripting.unregisterContentScripts({ ids: [OPTIONAL_PLATFORM_SCRIPTS_ID] });
+    }
+
+    if (activeMatches.length > 0) {
+      await chrome.scripting.registerContentScripts([
+        {
+          id: OPTIONAL_PLATFORM_SCRIPTS_ID,
+          matches: activeMatches,
+          js: ['content/content_injector.js'],
+          css: ['content/content.css'],
+          runAt: 'document_idle',
+          persistAcrossSessions: true,
+        },
+      ]);
+    }
+
+    return { granted: activeMatches };
+  } catch (err) {
+    console.warn('[Dual-Memory Optimizer] Failed syncing optional platform scripts:', err);
+    return { granted: [], error: err.message };
+  }
+}
+
+chrome.runtime.onStartup.addListener(() => {
+  syncOptionalPlatformScripts();
+});
+
 // Lifecycle: Install & Update
 chrome.runtime.onInstalled.addListener(async (details) => {
   console.log('[Dual-Memory Optimizer] Extension installed/updated:', details.reason);
@@ -126,6 +176,8 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   if (chrome.sidePanel && chrome.sidePanel.setPanelBehavior) {
     chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false }).catch(() => {});
   }
+
+  await syncOptionalPlatformScripts();
 });
 
 // Message Bus between Content Scripts, Popup, and Side Panel
@@ -179,6 +231,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       const reclaimedMB = Math.round(discardedCount * 85); // ~85MB average per discarded tab
       sendResponse({ success: true, discardedCount, reclaimedMB });
     });
+    return true;
+  }
+
+  if (message.type === 'SYNC_OPTIONAL_PLATFORMS') {
+    syncOptionalPlatformScripts().then((res) => sendResponse({ success: true, ...res }));
     return true;
   }
 
